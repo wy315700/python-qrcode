@@ -306,7 +306,7 @@ def _lost_point_level4(modules, modules_count):
     return ratio * 10
 
 
-def optimal_data_chunks(data, minimum=4):
+def optimal_data_chunks(data, minimum=4, hidden = False):
     """
     An iterator returning QRData chunks optimized to the data content.
 
@@ -321,14 +321,14 @@ def optimal_data_chunks(data, minimum=4):
         six.b('[') + re.escape(ALPHA_NUM) + six.b(']') + re_repeat)
     for is_num, chunk in num_bits:
         if is_num:
-            yield QRData(chunk, mode=MODE_NUMBER, check_data=False)
+            yield QRData(chunk, mode=MODE_NUMBER, check_data=False, hidden = hidden)
         else:
             for is_alpha, sub_chunk in _optimal_split(chunk, alpha_pattern):
                 if is_alpha:
                     mode = MODE_ALPHA_NUM
                 else:
                     mode = MODE_8BIT_BYTE
-                yield QRData(sub_chunk, mode=mode, check_data=False)
+                yield QRData(sub_chunk, mode=mode, check_data=False, hidden = hidden)
 
 
 def _optimal_split(data, pattern):
@@ -373,13 +373,15 @@ class QRData:
     Doesn't currently handle KANJI.
     """
 
-    def __init__(self, data, mode=None, check_data=True):
+    def __init__(self, data, mode=None, check_data=True, hidden = False):
         """
         If ``mode`` isn't provided, the most compact QR data type possible is
         chosen.
         """
         if check_data:
             data = to_bytestring(data)
+
+        self.hidden = hidden
 
         if mode is None:
             self.mode = optimal_mode(data)
@@ -519,7 +521,11 @@ def create_bytes(buffer, rs_blocks):
 def create_data(version, error_correction, data_list):
 
     buffer = BitBuffer()
+    has_hidden = False
     for data in data_list:
+        if data.hidden:
+            has_hidden = True
+            continue
         buffer.put(data.mode, 4)
         buffer.put(len(data), length_in_bits(data.mode, version))
         data.write(buffer)
@@ -538,6 +544,18 @@ def create_data(version, error_correction, data_list):
     # Terminate the bits (add up to four 0s).
     for i in range(min(bit_limit - len(buffer), 4)):
         buffer.put_bit(False)
+
+    if has_hidden:
+        for i in range(4):
+            buffer.put_bit(True)
+
+        for data in data_list:
+            if not data.hidden:
+                continue
+            buffer.put(data.mode, 4)
+            buffer.put(len(data), length_in_bits(data.mode, version))
+            data.write(buffer)
+
 
     # Delimit the string into 8-bit words, padding with 0s if necessary.
     delimit = len(buffer) % 8

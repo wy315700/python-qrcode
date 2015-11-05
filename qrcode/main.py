@@ -43,7 +43,7 @@ class QRCode:
         self.data_cache = None
         self.data_list = []
 
-    def add_data(self, data, optimize=20):
+    def add_data(self, data, optimize=20, hidden = False):
         """
         Add data to this QR Code.
 
@@ -55,9 +55,9 @@ class QRCode:
             self.data_list.append(data)
         else:
             if optimize:
-                self.data_list.extend(util.optimal_data_chunks(data))
+                self.data_list.extend(util.optimal_data_chunks(data, hidden = hidden))
             else:
-                self.data_list.append(util.QRData(data))
+                self.data_list.append(util.QRData(data, hidden = hidden))
         self.data_cache = None
 
     def make(self, fit=True):
