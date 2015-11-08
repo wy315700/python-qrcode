@@ -522,6 +522,7 @@ def create_data(version, error_correction, data_list):
 
     buffer = BitBuffer()
     has_hidden = False
+    # print data_list
     for data in data_list:
         if data.hidden:
             has_hidden = True
@@ -546,8 +547,8 @@ def create_data(version, error_correction, data_list):
         buffer.put_bit(False)
 
     if has_hidden:
-        for i in range(4):
-            buffer.put_bit(True)
+        # for i in range(4):
+        #     buffer.put_bit(True)
 
         for data in data_list:
             if not data.hidden:
@@ -556,7 +557,10 @@ def create_data(version, error_correction, data_list):
             buffer.put(len(data), length_in_bits(data.mode, version))
             data.write(buffer)
 
+        for i in range(min(bit_limit - len(buffer), 4)):
+            buffer.put_bit(False)
 
+    # print buffer
     # Delimit the string into 8-bit words, padding with 0s if necessary.
     delimit = len(buffer) % 8
     if delimit:
@@ -570,5 +574,5 @@ def create_data(version, error_correction, data_list):
             buffer.put(PAD0, 8)
         else:
             buffer.put(PAD1, 8)
-
+    # print buffer
     return create_bytes(buffer, rs_blocks)
