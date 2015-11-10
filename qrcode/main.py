@@ -32,6 +32,8 @@ class QRCode:
         self.image_factory = image_factory
         if image_factory is not None:
             assert issubclass(image_factory, BaseImage)
+
+        self.has_hidden = False
         self.clear()
 
     def clear(self):
@@ -51,6 +53,8 @@ class QRCode:
             the QR size by finding to more compressed modes of at least this
             length. Set to ``0`` to avoid optimizing at all.
         """
+        if hidden:
+            self.has_hidden = True
         if isinstance(data, util.QRData):
             self.data_list.append(data)
         else:
@@ -134,6 +138,10 @@ class QRCode:
             data.write(buffer)
 
         needed_bits = len(buffer)
+        # hidden data 
+        if self.has_hidden:
+            needed_bits += 4
+
         self.version = bisect_left(util.BIT_LIMIT_TABLE[self.error_correction],
                                    needed_bits, start)
         if self.version == 41:

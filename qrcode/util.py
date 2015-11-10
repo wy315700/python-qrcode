@@ -560,7 +560,7 @@ def create_data(version, error_correction, data_list):
         for i in range(min(bit_limit - len(buffer), 4)):
             buffer.put_bit(False)
 
-    # print buffer
+    print buffer
     # Delimit the string into 8-bit words, padding with 0s if necessary.
     delimit = len(buffer) % 8
     if delimit:
@@ -574,5 +574,5 @@ def create_data(version, error_correction, data_list):
             buffer.put(PAD0, 8)
         else:
             buffer.put(PAD1, 8)
-    # print buffer
+    print buffer
     return create_bytes(buffer, rs_blocks)
